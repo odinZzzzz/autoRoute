@@ -1,8 +1,8 @@
 package main
 
 import (
-	"autoRoute/demo/handler"
 	"github.com/gin-gonic/gin"
+	"github.com/odinZzzzz/autoRoute/autoRoute/demo/handler"
 )
 
 func main() {

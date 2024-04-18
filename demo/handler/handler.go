@@ -1,6 +1,6 @@
 package handler
 
-import "autoRoute"
+import "github.com/odinZzzzz/autoRoute/autoRoute"
 
 func InitHandler() *autoRoute.AutoRoute {
 	route := autoRoute.AutoRoute{

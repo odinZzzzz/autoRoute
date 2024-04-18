@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"autoRoute"
 	"github.com/gin-gonic/gin"
+	"github.com/odinZzzzz/autoRoute/autoRoute"
 )
 
 type gameHandler struct {
