@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/odinZzzzz/autoRoute/autoRoute"
+	"github.com/odinZzzzz/autoRoute"
 )
 
 type gameHandler struct {

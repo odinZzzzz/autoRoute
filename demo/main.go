@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/odinZzzzz/autoRoute/autoRoute/demo/handler"
+	"github.com/odinZzzzz/autoRoute/demo/handler"
 )
 
 func main() {

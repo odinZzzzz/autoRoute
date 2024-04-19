@@ -1,4 +1,4 @@
-module github.com/odinZzzzz/autoRoute/autoRoute
+module github.com/odinZzzzz/autoRoute
 
 go 1.22.1
 
