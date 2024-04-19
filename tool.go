@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"reflect"
+	"unicode"
+	"unicode/utf8"
 )
 
 func (a *AutoRoute) dealHandler(group string, handler interface{}) map[string]interface{} {
@@ -89,8 +91,8 @@ func FormatParam[T any](m map[string]interface{}, s T) T {
 
 	// 遍历 map 中的键值对
 	for key, value := range m {
-		// 获取结构体字段
-		field := structValue.FieldByName(key)
+		// 获取结构体字段 首字母主动大写匹配struct
+		field := structValue.FieldByName(Capitalize(key))
 		// 如果字段存在且可设置
 		if field.IsValid() && field.CanSet() {
 			// 获取字段类型
@@ -102,4 +104,11 @@ func FormatParam[T any](m map[string]interface{}, s T) T {
 	}
 
 	return structValue.Interface().(T)
+}
+func Capitalize(s string) string {
+	if s == "" {
+		return s
+	}
+	r, size := utf8.DecodeRuneInString(s)
+	return string(unicode.ToUpper(r)) + s[size:]
 }
