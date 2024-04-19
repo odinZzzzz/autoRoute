@@ -67,7 +67,7 @@ func (a *AutoRoute) log(msg string) {
 func mergePara(c *gin.Context) map[string]interface{} {
 	// 获取所有的POST参数
 	var mergedData map[string]interface{}
-	if err := c.Bind(&mergedData); err != nil {
+	if err := c.ShouldBind(&mergedData); err != nil {
 		//c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 	if mergedData == nil {

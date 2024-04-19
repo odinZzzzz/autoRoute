@@ -45,9 +45,6 @@ type BaseHandler struct {
 }
 
 func SendMsg(msg interface{}, c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"msg":  msg,
-	})
+	c.JSON(http.StatusOK, msg)
 	c.Abort()
 }
