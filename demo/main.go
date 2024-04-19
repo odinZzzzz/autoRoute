@@ -12,5 +12,8 @@ func main() {
 	aRoute := handler.InitHandler()
 	r.Use(aRoute.RouteMid)
 
-	r.Run(":8080")
+	err := r.Run(":8080")
+	if err != nil {
+		return
+	}
 }

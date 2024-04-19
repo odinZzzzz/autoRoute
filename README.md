@@ -10,6 +10,7 @@
 >  Gin框架的路由中间件
 >  极速创建 极速开发
 >  致力于接口开发尽可能少的修改文件
+>  纵享丝滑
 
 
 
@@ -24,10 +25,6 @@ import (
 
 type gameHandler struct {
 	autoRoute.AutoHandler
-}
-
-func (c gameHandler) Init() {
-	println(c.HandlerName)
 }
 
 func (c gameHandler) Login(msg interface{}) interface{} {
