@@ -8,12 +8,16 @@ import (
 type gameHandler struct {
 	autoRoute.AutoHandler
 }
+type paramDefine struct {
+	A string `json:"a"`
+}
 
-func (c gameHandler) Login(msg interface{}) interface{} {
-
+func (c gameHandler) Login(msg map[string]interface{}) interface{} {
+	loginParam := autoRoute.FormatParam(msg, paramDefine{})
 	return c.Suc(gin.H{
 		"uid":      10000001,
 		"nickname": "芥末",
-		"msg":      msg,
+		"msg":      loginParam,
+		"msg1":     loginParam.A,
 	})
 }

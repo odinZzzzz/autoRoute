@@ -81,3 +81,25 @@ func mergePara(c *gin.Context) map[string]interface{} {
 
 	return mergedData
 }
+func FormatParam[T any](m map[string]interface{}, s T) T {
+	// 获取结构体类型
+	structType := reflect.TypeOf(s)
+	// 创建结构体实例
+	structValue := reflect.New(structType).Elem()
+
+	// 遍历 map 中的键值对
+	for key, value := range m {
+		// 获取结构体字段
+		field := structValue.FieldByName(key)
+		// 如果字段存在且可设置
+		if field.IsValid() && field.CanSet() {
+			// 获取字段类型
+			fieldType := field.Type()
+			// 将 interface{} 类型的值转换为字段类型并设置到结构体中
+			fieldValue := reflect.ValueOf(value).Convert(fieldType)
+			field.Set(fieldValue)
+		}
+	}
+
+	return structValue.Interface().(T)
+}
