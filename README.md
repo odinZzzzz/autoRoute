@@ -40,6 +40,9 @@ func (c gameHandler) Login(msg map[string]interface{}) interface{} {
 	})
 }
 ```
+> 接口 127.0.0.1:8080/game/Login 
+> query 和 raw 合并在了msg的map里
+
 ```bash
 go mod tidy
 go run main.go
