@@ -19,7 +19,7 @@
 
 ``` gameHandler.go
 import (
-	"autoRoute"
+	"github.com/odinZzzzz/autoRoute"
 	"github.com/gin-gonic/gin"
 )
 
