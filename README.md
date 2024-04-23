@@ -40,8 +40,10 @@ func (c gameHandler) Login(msg map[string]interface{}) interface{} {
 	})
 }
 ```
-> 接口 127.0.0.1:8080/game/Login 
-> query 和 raw 合并在了msg的map里
+- 1 query参数a会自动匹配到大写A的struct属性中 
+- 2 token 为示例中HandlerPre 接口的透参
+- 3 接口 127.0.0.1:8080/game/Login?token=12306&&a=123
+- query 和 raw 合并在了msg的map里
 
 ```bash
 go mod tidy

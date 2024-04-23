@@ -11,5 +11,5 @@ type AutoHandler struct {
 }
 
 func (a *AutoRoute) Register(group string, handler interface{}) {
-	a.dealHandler(group, handler)
+	a.registerHandler(group, handler)
 }

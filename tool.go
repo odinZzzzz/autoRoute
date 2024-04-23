@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 )
 
-func (a *AutoRoute) dealHandler(group string, handler interface{}) map[string]interface{} {
+func (a *AutoRoute) registerHandler(group string, handler interface{}) map[string]interface{} {
 	// 获取结构体的反射值
 	val := reflect.ValueOf(handler)
 
