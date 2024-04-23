@@ -44,7 +44,7 @@ func (c gameHandler) Login(msg map[string]interface{}) interface{} {
 - 2 token 为示例中HandlerPre 接口的透参
 - 3 接口 127.0.0.1:8080/game/Login?token=12306&&a=123
 - query 和 raw 合并在了msg的map里
-
+![img.png](img.png)
 ```bash
 go mod tidy
 go run main.go
