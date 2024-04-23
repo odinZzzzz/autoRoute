@@ -80,7 +80,7 @@ func mergePara(c *gin.Context) map[string]interface{} {
 	for key, value := range queryData {
 		mergedData[key] = value[0]
 	}
-
+	mergedData["gin"] = c
 	return mergedData
 }
 func FormatParam[T any](m map[string]interface{}, s T) T {
