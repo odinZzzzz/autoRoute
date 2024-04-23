@@ -32,6 +32,8 @@ type paramDefine struct {
 
 func (c gameHandler) Login(msg map[string]interface{}) interface{} {
 	loginParam := autoRoute.FormatParam(msg, paramDefine{})
+	//参数中会注入gin.Context 置空后返回
+	loginParam.Gin = nil
 	return c.Suc(gin.H{
 		"uid":      10000001,
 		"nickname": "芥末",
