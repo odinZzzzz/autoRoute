@@ -1,13 +1,23 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/odinZzzzz/autoRoute/demo/handler"
+	"io/fs"
+	"net/http"
 )
+
+//go:embed static
+var staticFs embed.FS
 
 func main() {
 	r := gin.Default()
+	//设置静态资源目录
+	fads, _ := fs.Sub(staticFs, "static")
+	r.StaticFS("/", http.FS(fads))
+
 	handler.InitHandler()
 
 	aRoute := handler.InitHandler()
