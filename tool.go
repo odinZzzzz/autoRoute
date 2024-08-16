@@ -58,6 +58,7 @@ func (a *AutoHandler) Suc(data gin.H) gin.H {
 		"data": data,
 	}
 }
+
 func (a *AutoRoute) log(msg string) {
 	if !a.Debug {
 		return
@@ -98,8 +99,14 @@ func FormatParam[T any](m map[string]interface{}, s T) T {
 			// 获取字段类型
 			fieldType := field.Type()
 			// 将 interface{} 类型的值转换为字段类型并设置到结构体中
-			fieldValue := reflect.ValueOf(value).Convert(fieldType)
-			field.Set(fieldValue)
+
+			fieldValue := reflect.ValueOf(value)
+			if fieldValue.CanConvert(fieldType) {
+				field.Set(fieldValue.Convert(fieldType))
+			} else {
+				fmt.Printf(" FormatParam 【%s】 err：[%s ] value [%s]format 失败！！\r\n", structType.Name(), Capitalize(key), fieldValue)
+			}
+
 		}
 	}
 

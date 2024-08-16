@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/odinZzzzz/autoRoute"
+	"github.com/odinZzzzz/autoRoute/demo/DAO"
 )
 
 type gameHandler struct {
@@ -19,7 +20,7 @@ func (c gameHandler) HandlerPre(msg map[string]interface{}) bool {
 }
 
 type paramDefine struct {
-	A   string
+	A   int
 	Gin *gin.Context
 }
 
@@ -34,5 +35,14 @@ func (c gameHandler) Login(msg map[string]interface{}) interface{} {
 		"nickname": "芥末",
 		"msg":      loginParam,
 		"msg1":     loginParam.A,
+	})
+}
+func (c gameHandler) TestDAO(msg map[string]interface{}) interface{} {
+	data := DAO.BaseDAO{Uid: 10004063}
+	data.BaseDAO()
+	return c.Suc(gin.H{
+		"uid":      10000001,
+		"nickname": "芥末",
+		//"msg":      data,
 	})
 }
