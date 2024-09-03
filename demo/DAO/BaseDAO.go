@@ -2,7 +2,9 @@ package DAO
 
 import (
 	"context"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"time"
 )
 
 type BaseDAO struct {
@@ -18,6 +20,10 @@ func (a *BaseDAO) BaseDAO() {
 	// 查询数据
 	var result bson.M
 	collection.FindOne(context.TODO(), bson.M{"uid": a.Uid}).Decode(&result)
-
+	startT := time.Now() //计算当前时间
+	result["nickname"] = "go1"
+	collection.UpdateOne(context.TODO(), bson.M{"uid": a.Uid}, bson.M{"$set": result})
+	tc := time.Since(startT) //计算耗时
+	fmt.Printf("time cost = %v\n", tc)
 	a.Data = result
 }

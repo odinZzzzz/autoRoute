@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/odinZzzzz/autoRoute/demo/DAO"
 	"github.com/odinZzzzz/autoRoute/demo/handler"
-	"github.com/odinZzzzz/autoRoute/demo/remote"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"net/http"
@@ -36,15 +35,15 @@ func main() {
 		return server01.ListenAndServe()
 	})
 
-	server02 := &http.Server{
-		Addr:         ":8081",
-		Handler:      startRpcServer(),
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
-	g.Go(func() error {
-		return server02.ListenAndServe()
-	})
+	//server02 := &http.Server{
+	//	Addr:         ":8081",
+	//	Handler:      startRpcServer(),
+	//	ReadTimeout:  5 * time.Second,
+	//	WriteTimeout: 10 * time.Second,
+	//}
+	//g.Go(func() error {
+	//	return server02.ListenAndServe()
+	//})
 
 	if err := g.Wait(); err != nil {
 		log.Fatal(err)
@@ -61,22 +60,12 @@ func startServer() http.Handler {
 	//r.SetTrustedProxies([]string{"127.0.0.1"})
 	//添加ws监听
 	addWsListener(r)
-	handler.InitHandler()
+	//handler.InitHandler()
 	aRoute := handler.InitHandler()
 
 	r.Use(aRoute.RouteMid)
 
 	fmt.Println("服务启动 :8080")
-	return r
-}
-func startRpcServer() http.Handler {
-	r := gin.New()
-	r.Use(gin.Recovery())
-
-	//添加ws监听
-	addWsListener(r)
-	aRoute := remote.InitRemote()
-	r.Use(aRoute.RouteMid)
 	return r
 }
 

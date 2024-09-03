@@ -38,7 +38,7 @@ func (c gameHandler) Login(msg map[string]interface{}) interface{} {
 	})
 }
 func (c gameHandler) TestDAO(msg map[string]interface{}) interface{} {
-	data := DAO.BaseDAO{Uid: 10004063}
+	data := DAO.BaseDAO{Uid: 10600000679}
 	data.BaseDAO()
 	return c.Suc(gin.H{
 		"uid":      10000001,
