@@ -38,22 +38,12 @@ func (c gameHandler) HandlerPre(msg map[string]interface{}) bool {
 	return checkRes
 }
 
-type paramDefine struct {
-	A   string
-	Gin *gin.Context
-}
-
-func (c gameHandler) Login(msg map[string]interface{}) interface{} {
-	loginParam := autoRoute.FormatParam(msg, paramDefine{})
-
-	//参数中会注入gin.Context 置空后返回
-	loginParam.Gin = nil
+func (c gameHandler) Login(msg *game.LoginDefine) interface{} {
 
 	return c.Suc(gin.H{
 		"uid":      10000001,
 		"nickname": "芥末",
-		"msg":      loginParam,
-		"msg1":     loginParam.A,
+		"msg1":     msg.A,
 	})
 }
 
@@ -61,7 +51,8 @@ func (c gameHandler) Login(msg map[string]interface{}) interface{} {
 - 1 query参数a会自动匹配到大写A的struct属性中 
 - 2 token 为示例中HandlerPre 接口的透参
 - 3 接口 127.0.0.1:8080/game/Login?token=12306&&a=123
-- query 和 raw 合并在了msg的map里
+- 4 query 和 raw 合并在了msg的map里
+- 5 全新的proto动态解析功能
 ![img.png](img.png)
 - 
 ```bash
