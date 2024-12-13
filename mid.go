@@ -3,6 +3,8 @@ package autoRoute
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/protobuf/proto"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strings"
@@ -24,13 +26,35 @@ func (a *AutoRoute) RouteMid(c *gin.Context) {
 	if handler, ok := handler[mthodName]; ok {
 		args := []reflect.Value{
 			reflect.ValueOf(mergePara(c)),
+			//newPerson := reflect.New(paramType)
+		}
+		//
+		paramType := handler.Define
+		newData := reflect.New(paramType)
+		if RouteOpt.UseProto {
+			var bytesData []byte
+			// Read the Body content
+			if c.Request.Body != nil {
+				bytesData, _ = ioutil.ReadAll(c.Request.Body)
+			}
+			err := proto.Unmarshal(bytesData, newData.Interface().(proto.Message))
+			if err != nil {
+				fmt.Println(err)
+				res = gin.H{
+					"code": 401,
+					"msg":  "数列化参数错误",
+				}
+				return
+			}
 		}
 		//如果存在接口 则尝试执行当前接口的预处理函数
 		checkPreRes := a.runHandlerPre(handlerName, args)
 		if checkPreRes {
-
-			// 调用函数成功则返回正确值
-			res = handler.(func(args []reflect.Value) interface{})(args)
+			if RouteOpt.UseProto {
+				res = handler.Func([]reflect.Value{newData})
+			} else {
+				res = handler.Func(args)
+			}
 		} else {
 			res = gin.H{
 				"code": 400,
@@ -56,7 +80,7 @@ func (a *AutoRoute) runHandlerPre(handlerName string, args []reflect.Value) bool
 	var res bool = true
 	if handler, ok := handler["HandlerPre"]; ok {
 		// 调用函数成功则返回正确值
-		res = handler.(func(args []reflect.Value) interface{})(args).(bool)
+		res = handler.Func(args).(bool)
 	}
 	return res
 }

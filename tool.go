@@ -8,7 +8,20 @@ import (
 	"unicode/utf8"
 )
 
-func (a *AutoRoute) registerHandler(group string, handler interface{}) map[string]interface{} {
+type handlerData struct {
+	Name    string
+	Define  reflect.Type
+	Handler interface{}
+}
+
+func (a *handlerData) Func(args []reflect.Value) interface{} {
+	// 创建结构体实例的反射值
+	val := reflect.ValueOf(a.Handler)
+	// 调用方法
+	resultValues := val.MethodByName(a.Name).Call(args)
+	return resultValues[0].Interface()
+}
+func (a *AutoRoute) registerHandler(group string, handler interface{}) map[string]handlerData {
 	// 获取结构体的反射值
 	val := reflect.ValueOf(handler)
 
@@ -18,7 +31,7 @@ func (a *AutoRoute) registerHandler(group string, handler interface{}) map[strin
 	}
 
 	// 创建一个空 map，用于存储结构体字段名和字段值
-	result := make(map[string]interface{})
+	result := make(map[string]handlerData)
 	opt := make(map[string]interface{})
 
 	// 遍历结构体的字段
@@ -29,23 +42,28 @@ func (a *AutoRoute) registerHandler(group string, handler interface{}) map[strin
 		fieldValue := val.Field(i).Interface()
 		// 将字段名和字段值存储到 map 中
 		opt[fieldName] = fieldValue
+
 	}
 	a.log(fmt.Sprintf("开始注册 %s 到 AutoHandler", group))
 
 	// 遍历结构体的字段
 	for i := 0; i < val.NumMethod(); i++ {
 		// 获取字段名
-		fieldName := val.Type().Method(i).Name
-		// 将方法存储在 map 中
-		result[fieldName] = func(args []reflect.Value) interface{} {
-			// 创建结构体实例的反射值
-			val := reflect.ValueOf(handler)
-			// 调用方法
-			resultValues := val.MethodByName(fieldName).Call(args)
-			return resultValues[0].Interface()
+		method := val.Type().Method(i)
+		fieldName := method.Name
+		hData := handlerData{
+			Name:    fieldName,
+			Handler: handler,
 		}
+
+		mType := method.Type
+		if mType.NumIn() > 1 {
+			paramDefine := mType.In(1)
+			hData.Define = paramDefine.Elem()
+		}
+		result[fieldName] = hData
+
 	}
-	result["opt"] = opt
 	autoHandlerMap[group] = result
 	a.log(fmt.Sprintf("注册 %s  AutoHandler 成功", opt["HandlerName"]))
 	return result
@@ -60,7 +78,7 @@ func (a *AutoHandler) Suc(data gin.H) gin.H {
 }
 
 func (a *AutoRoute) log(msg string) {
-	if !a.Debug {
+	if !RouteOpt.Debug {
 		return
 	}
 	fmt.Printf("[AutoRoute-debug]:%s \r\n", msg)
@@ -81,7 +99,7 @@ func mergePara(c *gin.Context) map[string]interface{} {
 	for key, value := range queryData {
 		mergedData[key] = value[0]
 	}
-	mergedData["gin"] = c
+
 	return mergedData
 }
 func FormatParam[T any](m map[string]interface{}, s T) T {

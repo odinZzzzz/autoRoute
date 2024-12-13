@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/odinZzzzz/autoRoute"
 	"github.com/odinZzzzz/autoRoute/demo/DAO"
 	"github.com/odinZzzzz/autoRoute/demo/handler"
+	"github.com/odinZzzzz/autoRoute/demo/remote"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"net/http"
@@ -49,23 +51,32 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
 func startServer() http.Handler {
 
 	r := gin.New()
 	r.Use(gin.Recovery())
 	//设置静态资源目录
-	//fads, _ := fs.Sub(staticFs, "static")
-	//r.StaticFS("/", http.FS(fads))
-
-	//r.SetTrustedProxies([]string{"127.0.0.1"})
 	//添加ws监听
 	addWsListener(r)
 	//handler.InitHandler()
-	aRoute := handler.InitHandler()
+	aRoute := handler.InitHandler(autoRoute.RouteOption{
+		Debug:    false,
+		UseProto: true,
+	})
 
 	r.Use(aRoute.RouteMid)
 
 	fmt.Println("服务启动 :8080")
+	return r
+}
+func startRpcServer() http.Handler {
+	r := gin.New()
+	r.Use(gin.Recovery())
+	//添加ws监听
+	addWsListener(r)
+	aRoute := remote.InitRemote()
+	r.Use(aRoute.RouteMid)
 	return r
 }
 
