@@ -44,7 +44,7 @@ func (a *AutoRoute) registerHandler(group string, handler interface{}) map[strin
 		opt[fieldName] = fieldValue
 
 	}
-	a.log(fmt.Sprintf("开始注册 %s 到 AutoHandler", group))
+	DebugLog(fmt.Sprintf("开始注册 %s 到 AutoHandler", group))
 
 	// 遍历结构体的字段
 	for i := 0; i < val.NumMethod(); i++ {
@@ -55,7 +55,7 @@ func (a *AutoRoute) registerHandler(group string, handler interface{}) map[strin
 			Name:    fieldName,
 			Handler: handler,
 		}
-
+		DebugLog(fmt.Sprintf("注册 %s接口  AutoHandler 成功", fieldName))
 		mType := method.Type
 		if mType.NumIn() > 1 {
 			paramDefine := mType.In(1)
@@ -65,23 +65,28 @@ func (a *AutoRoute) registerHandler(group string, handler interface{}) map[strin
 
 	}
 	autoHandlerMap[group] = result
-	a.log(fmt.Sprintf("注册 %s  AutoHandler 成功", opt["HandlerName"]))
 	return result
 
 }
 
-func (a *AutoHandler) Suc(data gin.H) gin.H {
+func (a *AutoHandler) Suc(data map[string]any) map[string]any {
 	return gin.H{
 		"code": 200,
 		"data": data,
 	}
 }
 
-func (a *AutoRoute) log(msg string) {
+func DebugLog(msg string) {
 	if !RouteOpt.Debug {
 		return
 	}
-	fmt.Printf("[AutoRoute-debug]:%s \r\n", msg)
+	fmt.Printf("\033[32m[AutoRoute-Debug]:%s \033[0m\r\n", msg)
+}
+func WarnLog(msg string) {
+	fmt.Printf("\033[33m[AutoRoute-Warn]:%s \033[0m\r\n", msg)
+}
+func ErrorLog(msg string) {
+	fmt.Printf("\033[41m[AutoRoute-Warn]:%s \033[0m\r\n", msg)
 }
 
 // 合并raw 参数 和 query参数

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // 拦截所有请求的中间件
@@ -19,8 +20,7 @@ func (a *AutoRoute) RouteMid(c *gin.Context) {
 		return
 	}
 	handlerName, mthodName := parts[1], parts[2]
-	// chuli1
-	a.log(fmt.Sprintf("接收到接口 接口名：%s 函数名：%s ", handlerName, mthodName))
+	s_time := time.Now()
 	handler := autoHandlerMap[handlerName]
 	var res interface{}
 	if handler, ok := handler[mthodName]; ok {
@@ -70,6 +70,11 @@ func (a *AutoRoute) RouteMid(c *gin.Context) {
 		}
 
 	}
+	dur := time.Since(s_time)
+	if dur > 100*time.Millisecond {
+		WarnLog(fmt.Sprintf("接口访问耗时超过100ms /%s/%s 耗时%s 超过 ", handlerName, mthodName, dur))
+	}
+	DebugLog(fmt.Sprintf("接收到接口/%s/%s 耗时%s ", handlerName, mthodName, dur))
 	SendMsg(res, c)
 
 }
