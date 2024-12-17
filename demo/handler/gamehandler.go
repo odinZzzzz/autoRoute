@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/odinZzzzz/autoRoute"
 	"github.com/odinZzzzz/autoRoute/demo/define/game"
 )
@@ -21,7 +20,7 @@ func (c GameHandler) HandlerPre(msg map[string]interface{}) bool {
 
 func (c GameHandler) Test(msg *game.LoginDefine) interface{} {
 
-	return c.Suc(gin.H{
+	return c.Suc(map[string]any{
 		"uid":      10000001,
 		"nickname": "芥末",
 		"msg1":     msg.String(),

@@ -15,6 +15,7 @@ var RouteOpt = RouteOption{
 	Debug:    false,
 	UseProto: false,
 }
+var App *AutoRoute
 
 type AutoRoute struct {
 }
@@ -50,6 +51,7 @@ func StartServer(option StartOption) *AutoRoute {
 	r.Use(gin.Recovery())
 	//设置静态资源目录
 	//handler.InitHandler()
+	addWsListener(r)
 	aRoute := AutoRoute{}
 	option.InitHandler(&aRoute)
 	addr := fmt.Sprintf("%s:%d", option.Host, option.Port)
@@ -60,15 +62,15 @@ func StartServer(option StartOption) *AutoRoute {
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-	DebugLog(fmt.Sprintf("autoRouteServer%s 启动成功", addr))
-	DebugLog("\n                _        _____                             _____ _             _           _ \n     /\\        | |      / ____|                           / ____| |           | |         | |\n    /  \\  _   _| |_ ___| (___   ___ _ ____   _____ _ __  | (___ | |_ __ _ _ __| |_ ___  __| |\n   / /\\ \\| | | | __/ _ \\\\___ \\ / _ \\ '__\\ \\ / / _ \\ '__|  \\___ \\| __/ _` | '__| __/ _ \\/ _` |\n  / ____ \\ |_| | || (_) |___) |  __/ |   \\ V /  __/ |     ____) | || (_| | |  | ||  __/ (_| |\n /_/    \\_\\__,_|\\__\\___/_____/ \\___|_|    \\_/ \\___|_|    |_____/ \\__\\__,_|_|   \\__\\___|\\__,_|\n                                                                                             \n                                                                                             ")
+	LogDebug(fmt.Sprintf("autoRouteServer%s 启动成功", addr))
+	LogDebug("\n                _        _____                             _____ _             _           _ \n     /\\        | |      / ____|                           / ____| |           | |         | |\n    /  \\  _   _| |_ ___| (___   ___ _ ____   _____ _ __  | (___ | |_ __ _ _ __| |_ ___  __| |\n   / /\\ \\| | | | __/ _ \\\\___ \\ / _ \\ '__\\ \\ / / _ \\ '__|  \\___ \\| __/ _` | '__| __/ _ \\/ _` |\n  / ____ \\ |_| | || (_) |___) |  __/ |   \\ V /  __/ |     ____) | || (_| | |  | ||  __/ (_| |\n /_/    \\_\\__,_|\\__\\___/_____/ \\___|_|    \\_/ \\___|_|    |_____/ \\__\\__,_|_|   \\__\\___|\\__,_|\n                                                                                             \n                                                                                             ")
 	g.Go(func() error {
 		return server01.ListenAndServe()
 	})
 	if err := g.Wait(); err != nil {
 		log.Fatal(err)
 	}
-
+	App = &aRoute
 	return &aRoute
 }
 
@@ -79,26 +81,25 @@ var upgrader = websocket.Upgrader{
 }
 
 func addWsListener(r *gin.Engine) {
-	r.GET("/", func(c *gin.Context) {
+	LogDebug("Websocket 服务监听成功")
+	r.GET("/ws", func(c *gin.Context) {
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, map[string]any{"error": err.Error()})
 			return
 		}
-		// 在这里编写你的WebSocket逻辑
-		// 例如，接收和发送消息
 		for {
 			messageType, p, err := conn.ReadMessage()
 			if err != nil {
-				conn.Close()
+				err := conn.Close()
+				if err != nil {
+					LogErr(err)
+				}
 				break
 			}
 
-			err = conn.WriteMessage(messageType, p)
-			if err != nil {
-				conn.Close()
-				break
-			}
+			App.RouteWSMid(conn, messageType, p)
+
 		}
 	})
 }

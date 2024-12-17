@@ -40,7 +40,7 @@ func (c gameHandler) HandlerPre(msg map[string]interface{}) bool {
 
 func (c gameHandler) Login(msg *game.LoginDefine) interface{} {
 
-	return c.Suc(gin.H{
+	return c.Suc(map[string]any{
 		"uid":      10000001,
 		"nickname": "芥末",
 		"msg1":     msg.A,
@@ -54,6 +54,8 @@ func (c gameHandler) Login(msg *game.LoginDefine) interface{} {
 - 4 query 和 raw 合并在了msg的map里
 - 5 全新的proto动态解析功能
 ![img.png](img.png)
+-6 兼容websocket长链接口
+![img.png](img_1.png)
 - 
 ```bash
 go mod tidy
