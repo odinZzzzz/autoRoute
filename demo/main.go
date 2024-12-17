@@ -11,10 +11,10 @@ var staticFs embed.FS
 
 func main() {
 	autoRoute.StartServer(autoRoute.StartOption{
-		Port:        8080,
+		Port:        808,
 		InitHandler: InitHandler,
 		Option: autoRoute.RouteOption{
-			Debug:    true,
+			Debug:    false,
 			UseProto: true,
 		},
 	})

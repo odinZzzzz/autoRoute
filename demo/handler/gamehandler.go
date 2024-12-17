@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/odinZzzzz/autoRoute"
-	"github.com/odinZzzzz/autoRoute/demo/define/game"
+	"github.com/odinZzzzz/autoRoute/demo/define/demo"
 )
 
 type GameHandler struct {
@@ -18,7 +18,7 @@ func (c GameHandler) HandlerPre(msg map[string]interface{}) bool {
 	return checkRes
 }
 
-func (c GameHandler) Test(msg *game.LoginDefine) interface{} {
+func (c GameHandler) Test(msg *demo.DemoLoginDefine) interface{} {
 
 	return c.Suc(map[string]any{
 		"uid":      10000001,
