@@ -1,15 +1,18 @@
 package autoRoute
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/odinZzzzz/autoRoute/tool"
 	"google.golang.org/protobuf/proto"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -21,11 +24,11 @@ func (a *AutoRoute) RouteMid(c *gin.Context) {
 	if len(parts) < 3 {
 		return
 	}
-	handlerName, mthodName := parts[1], parts[2]
+	handlerName, methodName := parts[1], parts[2]
 	s_time := time.Now()
-	handler := autoHandlerMap[handlerName]
+	handler := AutoHandlerMap[handlerName]
 	var res interface{}
-	if handler, ok := handler[mthodName]; ok {
+	if handler, ok := handler[methodName]; ok {
 		args := []reflect.Value{
 			reflect.ValueOf(mergePara(c)),
 			//newPerson := reflect.New(paramType)
@@ -49,20 +52,59 @@ func (a *AutoRoute) RouteMid(c *gin.Context) {
 				return
 			}
 		}
-		//如果存在接口 则尝试执行当前接口的预处理函数
-		checkPreRes := a.runHandlerPre(handlerName, args)
-		if checkPreRes {
-			if RouteOpt.UseProto {
-				res = handler.Func([]reflect.Value{newData})
-			} else {
-				res = handler.Func(args)
-			}
-		} else {
-			res = map[string]any{
-				"code": 400,
-				"msg":  "接口拒绝访问",
-			}
+		// 定义一个等待组，用于等待协程完成
+		resultChan := make(chan interface{})
+		var wg sync.WaitGroup
+		var queData = &tool.ReqData{
+			Open:        true,
+			HandlerName: handlerName,
+			MethodName:  methodName,
+			Param:       args,
+			ProtoData:   newData,
+			ResultChan:  resultChan,
 		}
+		//todo 加入请求队列
+		a.QueueMid(queData)
+		//todo 在此等待数据返回 超时就提前返回
+
+		wg.Add(1)
+		ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+		defer cancel()
+		// 启动协程
+		go func() {
+			defer wg.Done()
+			defer close(resultChan)
+			select {
+			case <-ctx.Done(): // 检测上下文是否超时或被取消
+				LogDebug("任务协程超时或被取消，返回")
+				res = map[string]any{
+					"code": 888,
+					"msg":  "接口繁忙,请重试",
+				}
+				queData.Open = false
+				return
+			case res = <-resultChan: // 收到返回消息
+				LogDebug("协程执行完成,返回前端数据")
+				return
+			}
+		}()
+
+		// 等待协程完成
+		wg.Wait()
+		////如果存在接口 则尝试执行当前接口的预处理函数
+		//checkPreRes := a.runHandlerPre(handlerName, args)
+		//if checkPreRes {
+		//	if RouteOpt.UseProto {
+		//		res = handler.Func([]reflect.Value{newData})
+		//	} else {
+		//		res = handler.Func(args)
+		//	}
+		//} else {
+		//	res = map[string]any{
+		//		"code": 400,
+		//		"msg":  "接口拒绝访问",
+		//	}
+		//}
 
 	} else {
 		//调用失败则返回404 code
@@ -74,9 +116,9 @@ func (a *AutoRoute) RouteMid(c *gin.Context) {
 	}
 	dur := time.Since(s_time)
 	if dur > 100*time.Millisecond {
-		LogWarn(fmt.Sprintf("接口访问耗时超过100ms /%s/%s 耗时%s 超过 ", handlerName, mthodName, dur))
+		LogWarn(fmt.Sprintf("接口访问耗时超过100ms /%s/%s 耗时%s 超过 ", handlerName, methodName, dur))
 	}
-	LogDebug(fmt.Sprintf("接收到接口/%s/%s 耗时%s ", handlerName, mthodName, dur))
+	LogDebug(fmt.Sprintf("接收到接口/%s/%s 耗时%s ", handlerName, methodName, dur))
 	SendMsg(res, c)
 
 }
@@ -104,10 +146,10 @@ func (a *AutoRoute) RouteWSMid(conn *websocket.Conn, msgType int, p []byte) {
 		SendWSMsg(conn, resType, res, param)
 		return
 	}
-	handlerName, mthodName := parts[0], parts[1]
+	handlerName, methodName := parts[0], parts[1]
 	s_time := time.Now()
-	handler := autoHandlerMap[handlerName]
-	if handler, ok := handler[mthodName]; ok {
+	handler := AutoHandlerMap[handlerName]
+	if handler, ok := handler[methodName]; ok {
 
 		paramType := handler.Define
 		newData := reflect.New(paramType)
@@ -124,8 +166,15 @@ func (a *AutoRoute) RouteWSMid(conn *websocket.Conn, msgType int, p []byte) {
 				return
 			}
 		}
+		//todo ws请求 加入请求队列
+		var queData = &tool.ReqData{
+			Open:        true,
+			HandlerName: handlerName,
+			MethodName:  methodName,
+		}
+		a.QueueMid(queData)
 		//如果存在接口 则尝试执行当前接口的预处理函数
-		checkPreRes := a.runHandlerPre(handlerName, []reflect.Value{reflect.ValueOf(map[string]any{})})
+		checkPreRes := a.RunHandlerPre(handlerName, []reflect.Value{reflect.ValueOf(map[string]any{})})
 		if checkPreRes {
 			if RouteOpt.UseProto {
 				res = handler.Func([]reflect.Value{newData})
@@ -147,11 +196,12 @@ func (a *AutoRoute) RouteWSMid(conn *websocket.Conn, msgType int, p []byte) {
 		}
 
 	}
+
 	dur := time.Since(s_time)
 	if dur > 100*time.Millisecond {
-		LogWarn(fmt.Sprintf("接口访问耗时超过100ms /%s/%s 耗时%s 超过 ", handlerName, mthodName, dur))
+		LogWarn(fmt.Sprintf("接口访问耗时超过100ms /%s/%s 耗时%s 超过 ", handlerName, methodName, dur))
 	}
-	LogDebug(fmt.Sprintf("接收到接口/%s/%s 耗时%s ", handlerName, mthodName, dur))
+	LogDebug(fmt.Sprintf("接收到接口/%s/%s 耗时%s ", handlerName, methodName, dur))
 
 	SendWSMsg(conn, websocket.TextMessage, res, param)
 
@@ -180,8 +230,8 @@ func SendWSMsg(conn *websocket.Conn, messageType int, res interface{}, param wsP
 }
 
 // 拦截所有请求的中间件 true 则通过预处理 false 则拦截接口返回err
-func (a *AutoRoute) runHandlerPre(handlerName string, args []reflect.Value) bool {
-	handler := autoHandlerMap[handlerName]
+func (a *AutoRoute) RunHandlerPre(handlerName string, args []reflect.Value) bool {
+	handler := AutoHandlerMap[handlerName]
 	var res bool = true
 	if handler, ok := handler["HandlerPre"]; ok {
 		// 调用函数成功则返回正确值
@@ -198,4 +248,22 @@ type BaseHandler struct {
 func SendMsg(msg interface{}, c *gin.Context) {
 	c.JSON(http.StatusOK, msg)
 	c.Abort()
+}
+
+var maxQue = 10
+
+func (a *AutoRoute) QueueMid(req *tool.ReqData) interface{} {
+	var result interface{}
+	var que = tool.GetQueue(req.HandlerName)
+	// 寻找队列池
+	if que.Size() >= maxQue {
+		result = gin.H{
+			"code": 886,
+			"msg":  "接口队列繁忙,稍后重试",
+		}
+	}
+	//队列池堆积后显示拥挤
+	que.Enqueue(req)
+	return result
+
 }

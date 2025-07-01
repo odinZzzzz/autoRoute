@@ -64,7 +64,7 @@ func (a *AutoRoute) registerHandler(group string, handler interface{}) map[strin
 		result[fieldName] = hData
 
 	}
-	autoHandlerMap[group] = result
+	AutoHandlerMap[group] = result
 	return result
 
 }

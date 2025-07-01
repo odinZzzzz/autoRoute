@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/odinZzzzz/autoRoute/tool"
 	"golang.org/x/sync/errgroup"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
-var autoHandlerMap map[string]map[string]handlerData = make(map[string]map[string]handlerData)
+var AutoHandlerMap map[string]map[string]handlerData = make(map[string]map[string]handlerData)
 var RouteOpt = RouteOption{
 	Debug:    false,
 	UseProto: false,
@@ -29,6 +31,20 @@ type AutoHandler struct {
 
 func (a *AutoRoute) Register(group string, handler interface{}) {
 	a.registerHandler(group, handler)
+}
+
+func (a *AutoRoute) FncCall(r *tool.ReqData) interface{} {
+	var res interface{}
+	handler := AutoHandlerMap[r.HandlerName]
+	if method, ok := handler[r.MethodName]; ok {
+		res = method.Func(r.Param)
+	} else {
+		res = map[string]any{
+			"code": 404,
+			"msg":  "接口不存在",
+		}
+	}
+	return res
 }
 
 type StartOption struct {
@@ -55,13 +71,15 @@ func StartServer(option StartOption) *AutoRoute {
 	aRoute := AutoRoute{}
 	option.InitHandler(&aRoute)
 	addr := fmt.Sprintf("%s:%d", option.Host, option.Port)
+	//r.Use(aRoute.QueueMid)
 	r.Use(aRoute.RouteMid)
 	server01 := &http.Server{
 		Addr:         addr,
 		Handler:      r,
 		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		WriteTimeout: 15 * time.Second,
 	}
+	go startQueueWatch()
 	LogDebug(fmt.Sprintf("autoRouteServer%s 启动成功", addr))
 	LogDebug("\n                _        _____                             _____ _             _           _ \n     /\\        | |      / ____|                           / ____| |           | |         | |\n    /  \\  _   _| |_ ___| (___   ___ _ ____   _____ _ __  | (___ | |_ __ _ _ __| |_ ___  __| |\n   / /\\ \\| | | | __/ _ \\\\___ \\ / _ \\ '__\\ \\ / / _ \\ '__|  \\___ \\| __/ _` | '__| __/ _ \\/ _` |\n  / ____ \\ |_| | || (_) |___) |  __/ |   \\ V /  __/ |     ____) | || (_| | |  | ||  __/ (_| |\n /_/    \\_\\__,_|\\__\\___/_____/ \\___|_|    \\_/ \\___|_|    |_____/ \\__\\__,_|_|   \\__\\___|\\__,_|\n                                                                                             \n                                                                                             ")
 	g.Go(func() error {
@@ -78,6 +96,20 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true // 允许跨域请求
 	},
+}
+var demoCall = tool.HandleCall{}
+
+// 启动queue取出协程
+func startQueueWatch() {
+	demoCall.BindHandle("demo")
+	for {
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go demoCall.Step(App.FncCall, &wg)
+
+		wg.Wait()
+	}
+
 }
 
 func addWsListener(r *gin.Engine) {
