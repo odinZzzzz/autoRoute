@@ -254,16 +254,18 @@ var maxQue = 10
 
 func (a *AutoRoute) QueueMid(req *tool.ReqData) interface{} {
 	var result interface{}
-	var que = tool.GetQueue(req.HandlerName)
+	//var que = tool.GetQueue(req.HandlerName)
 	// 寻找队列池
-	if que.Size() >= maxQue {
-		result = gin.H{
-			"code": 886,
-			"msg":  "接口队列繁忙,稍后重试",
-		}
-	}
+	//if que.Size() >= maxQue {
+	//	result = gin.H{
+	//		"code": 886,
+	//		"msg":  "接口队列繁忙,稍后重试",
+	//	}
+	//	return result
+	//}
 	//队列池堆积后显示拥挤
-	que.Enqueue(req)
+	//que.Enqueue(req)
+	reqChannel <- req
 	return result
 
 }

@@ -8,7 +8,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"log"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -54,6 +53,8 @@ type StartOption struct {
 	InitHandler func(route *AutoRoute)
 	Option      RouteOption
 }
+
+var reqChannel = make(chan *tool.ReqData, 10)
 
 func StartServer(option StartOption) *AutoRoute {
 
@@ -102,12 +103,17 @@ var demoCall = tool.HandleCall{}
 // 启动queue取出协程
 func startQueueWatch() {
 	demoCall.BindHandle("demo")
-	for {
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		go demoCall.Step(App.FncCall, &wg)
-
-		wg.Wait()
+	for req := range reqChannel {
+		req.ResultChan <- App.FncCall(req)
+		//select {
+		//case req := <-reqChannel:
+		//	App.FncCall(req)
+		//}
+		//wg := sync.WaitGroup{}
+		//wg.Add(1)
+		//go demoCall.Step(App.FncCall, &wg)
+		//
+		//wg.Wait()
 	}
 
 }
